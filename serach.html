@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor de Exoplanetas Kepler - Kitty Code</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #020414;
+            color: #e2e8f0;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .hud-border {
+            border: 1px solid #0ea5e9;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.4), inset 0 0 15px rgba(14, 165, 233, 0.3);
+            background-color: rgba(2, 4, 20, 0.85);
+            backdrop-filter: blur(5px);
+        }
+        #threejs-container { width: 100%; height: 400px; cursor: grab; }
+        #threejs-container:active { cursor: grabbing; }
+        .catalog-item {
+            cursor: pointer; transition: all 0.2s ease-in-out; border-left: 3px solid transparent;
+        }
+        .catalog-item:hover { background-color: rgba(14, 165, 233, 0.2); border-left-color: #0ea5e9; }
+        .catalog-item.active { background-color: rgba(14, 165, 233, 0.3); border-left-color: #38bdf8; font-weight: bold; }
+        
+        /* Filter Buttons */
+        .filter-btn {
+            background-color: rgba(14, 165, 233, 0.2); border: 1px solid #0ea5e9;
+            transition: all 0.2s ease-in-out;
+        }
+        .filter-btn:hover { background-color: rgba(14, 165, 233, 0.4); }
+        .filter-btn.active {
+            background-color: #0ea5e9; color: #020414; font-weight: bold;
+        }
+
+        /* Disposition Colors */
+        .confirmed { color: #4ade80; border-color: #4ade80; }
+        .candidate { color: #facc15; border-color: #facc15; }
+        .false-positive { color: #f87171; border-color: #f87171; }
+        
+        .evidence-item { display: flex; align-items: center; }
+        .evidence-item.con { color: #f87171; }
+        .evidence-item.pro { color: #4ade80; }
+    </style>
+</head>
+<body class="w-full p-4 md:p-8">
+
+    <header class="text-center mb-8">
+        <h1 class="orbitron text-4xl md:text-5xl font-black text-white uppercase tracking-wider">
+            Catálogo de Exoplanetas Kepler
+        </h1>
+        <p class="mt-2 text-sky-300">Un visor interactivo por Kitty Code</p>
+    </header>
+
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <aside class="lg:col-span-1 hud-border rounded-lg p-4 h-full flex flex-col">
+            <h2 class="orbitron text-xl text-center mb-4">Panel de Exploración</h2>
+            
+            <div class="mb-4">
+                <p class="text-sky-300 mb-2 text-center">Filtrar por Clasificación</p>
+                <div id="filter-container" class="grid grid-cols-2 gap-2 text-sm">
+                    <button class="filter-btn p-2 rounded-md active" data-filter="ALL">Todos</button>
+                    <button class="filter-btn p-2 rounded-md" data-filter="CONFIRMED">Confirmados</button>
+                    <button class="filter-btn p-2 rounded-md" data-filter="CANDIDATE">Candidatos</button>
+                    <button class="filter-btn p-2 rounded-md" data-filter="FALSE POSITIVE">Falsos Positivos</button>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                 <input type="text" id="search-box" placeholder="Buscar por ID de Kepler..." class="w-full bg-sky-900/50 border border-sky-600 rounded p-2 focus:outline-none focus:ring-2 focus:ring-sky-400">
+            </div>
+
+            <div id="catalog-list" class="flex-grow overflow-y-auto pr-2" style="max-height: 65vh;">
+                </div>
+            <div class="mt-4">
+                 <button id="download-csv" class="w-full text-center orbitron bg-sky-500 hover:bg-sky-400 text-black font-bold py-2 px-4 rounded-lg uppercase tracking-wider transition-all duration-300">
+                    Descargar Catálogo CSV
+                </button>
+            </div>
+        </aside>
+
+        <section id="display-panel" class="lg:col-span-2 hud-border rounded-lg p-6">
+            <h2 id="planet-id" class="orbitron text-3xl text-center mb-4"></h2>
+            <div id="threejs-container" class="rounded-lg mb-6"></div>
+            
+            <div class="text-center mb-6">
+                <p class="text-lg">Veredicto del Modelo:</p>
+                <p id="planet-disposition" class="orbitron text-4xl font-bold border-2 rounded-lg inline-block px-4 py-1 mt-1"></p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="orbitron text-xl text-sky-300 mb-3">Parámetros Principales</h3>
+                    <div id="details-grid" class="space-y-2 text-sm"></div>
+                </div>
+                <div>
+                    <h3 class="orbitron text-xl text-sky-300 mb-3">Análisis del Oráculo</h3>
+                    <div id="explanation-section" class="space-y-4"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+<script>
+// --- DATABASE ---
+const planetDataCSV = `koi_disposition,koi_score,koi_fpflag_nt,koi_fpflag_ss,koi_fpflag_co,koi_fpflag_ec,koi_period,koi_time0bk,koi_impact,koi_duration,koi_depth,koi_prad,koi_teq,koi_insol,koi_model_snr,koi_tce_delivname,koi_steff,koi_slogg,koi_srad,koi_kepmag
+CANDIDATE,0.969,0,0,0,0,54.4183825,162.01304,0.586,4.507,874.8,2.83,443,9.11,25.8,1_q1_q17_dr25_tce,5455,4.467,0.927,15.347
+CONFIRMED,1,0,0,0,0,2.5258843,171.59555,0.701,1.6545,603.3,2.75,1406,936.16,40.9,2_q1_q17_dr25_tce,6031,4.438,1.046,15.714
+CONFIRMED,1,0,0,0,0,11.0943213,171.20116,0.539,4.5945,1517.5,3.9,835,114.81,66.5,3_q1_q17_dr25_tce,6046,4.486,0.972,15.714
+CONFIRMED,1,0,1,0,0,4.1344351,172.97937,0.762,3.1402,686.6,2.77,1160,437.65,40.2,4_q1_q17_dr25_tce,6046,4.446,0.972,15.714
+CONFIRMED,0.992,0,0,0,0,2.5665889,179.55437,0.755,2.429,226.5,1.59,1360,807.74,15,5_q1_q17_dr25_tce,6046,4.486,0.972,15.714
+CONFIRMED,1,0,0,0,0,16.0686471,173.621937,0.052,3.5347,4914.5,5.76,600,30.75,161.9,6_q1_q17_dr25_tce,5031,4.485,0.848,15.841
+CONFIRMED,0.811,0,0,0,0,2.4706134,122.76336,0.818,1.74319,143.1,13.04,1339,761.46,4304.3,7_q1_q17_dr25_tce,5820,4.457,0.984,11.338
+CONFIRMED,1,0,1,0,0,2.2047354,121.358547,0.224,0.88894,8674.7,16.1,2048,4149.92,5645.9,8_q1_q17_dr25_tce,6440,4.019,1.952,10.463
+CONFIRMED,0.998,0,0,0,0,3.5224984,121.119422,0.651,3.19843,914.7,14.99,1521,1264.67,1741.6,9_q1_q17_dr25_tce,6225,4.169,1.451,13.563
+CONFIRMED,1,0,0,0,0,0.7871241,133.99818,0.051,2.6202,131.1,1.16,1206,501.46,50.6,10_q1_q17_dr25_tce,5833,4.407,1.022,12.772
+CONFIRMED,1,0,0,0,0,9.2735817,171.28155,0.387,3.2875,1288.3,2.47,649,41.85,67.2,11_q1_q17_dr25_tce,4856,4.588,0.696,15.302
+CONFIRMED,1,0,0,0,0,6.0250033,171.60259,0.256,1.5821,1992.7,2.65,678,50.04,65.4,12_q1_q17_dr25_tce,4537,4.648,0.676,15.704
+CONFIRMED,1,0,0,0,0,5.3498818,171.89694,0.092,3.0278,831,2.55,919,168.99,60.6,13_q1_q17_dr25_tce,5185,4.44,0.91,15.416
+CANDIDATE,0.98,0,0,0,0,3.9410322,136.08662,0.226,2.5984,363.3,1.7,1018,251.15,28.9,14_q1_q17_dr25_tce,5185,4.44,0.91,15.416
+CANDIDATE,0.971,0,0,0,0,6.1093481,132.8031,0.025,3.596,217.4,1.3,600,97.03,14.1,15_q1_q17_dr25_tce,5185,4.44,0.91,15.416
+CONFIRMED,1,0,0,0,0,21.1679992,171.32894,0.896,3.4555,857.2,2.95,530,18.64,24.3,16_q1_q17_dr25_tce,4854,4.5,0.828,15.577
+CONFIRMED,1,0,0,0,0,4.9967797,171.74208,0.71,2.1717,934.7,2.78,917,166.95,28.2,17_q1_q17_dr25_tce,5359,4.552,0.847,15.791
+CONFIRMED,1,0,0,0,0,4.2889636,171.89839,0.424,2.575,750.0,2.3,1012,247.57,61.8,18_q1_q17_dr25_tce,5644,4.564,0.831,15.356
+CONFIRMED,1,0,0,0,0,38.377548,172.82048,0.468,5.588,724.2,2.82,529,18.53,34.7,19_q1_q17_dr25_tce,5481,4.589,1.036,15.172
+CONFIRMED,1,0,0,0,0,4.233225,171.95325,0.046,2.946,1454.4,4.23,1038,272.3,47.9,20_q1_q17_dr25_tce,5852,4.466,0.963,15.397
+CONFIRMED,1,0,0,0,0,1.957924,171.1856,0.941,1.482,752.1,3.01,1564,1427.6,128.2,21_q1_q17_dr25_tce,5892,4.41,1.062,15.492
+CONFIRMED,1,0,0,0,0,6.885937,172.24903,0.151,3.422,1124.6,3.31,889,141.2,49.3,22_q1_q17_dr25_tce,5738,4.53,0.868,15.428
+CONFIRMED,1,0,0,0,0,3.497334,171.2789,0.729,3.047,243.6,1.47,1179,471.6,16.4,23_q1_q17_dr25_tce,5797,4.512,0.88,15.539
+CONFIRMED,1,0,0,0,0,11.521446,171.43912,0.569,4.428,1551,3.95,785,86.6,63.9,24_q1_q17_dr25_tce,5787,4.48,0.923,15.342
+CONFIRMED,1,0,0,0,0,19.221389,172.6337,0.873,3.279,252.6,1.52,583,27.2,12.7,25_q1_q17_dr25_tce,5654,4.582,0.84,15.487
+CONFIRMED,1,0,0,0,0,3.55138,171.4802,0.54,2.181,323.3,1.96,1217,522.6,23.1,26_q1_q17_dr25_tce,6057,4.356,1.09,15.34
+CANDIDATE,1,0,0,0,0,331.641,209.204,0.011,9.97,4141,5.92,357,3.5,23.3,27_q1_q17_dr25_tce,5463,4.482,0.916,15.111
+CANDIDATE,0.999,0,0,0,0,37.3046,172.84,0.957,2.83,130,1.13,514,16.2,8.4,28_q1_q17_dr25_tce,5835,4.5,0.86,15.56
+CANDIDATE,0.999,0,0,0,0,8.5898,172.01,0.769,3.48,83.9,0.89,892,146.4,9.9,29_q1_q17_dr25_tce,5638,4.55,0.86,15.56
+CANDIDATE,0.998,0,0,0,0,2.5024,171.55,0.669,1.75,142,1.25,1351,788.6,14.7,30_q1_q17_dr25_tce,5714,4.56,0.85,15.57
+FALSE POSITIVE,0.021,0,0,0,1,0.681401611,132.10175,0.147,0.865,103.6,1.07,2218,5733.41,12.3,31_q1_q17_dr25_tce,6173,4.447,1.041,15.385
+FALSE POSITIVE,0,0,0,1,0,0.527699488,131.70393,1.252,3.222,1579.2,29.35,2088,4500.53,453.3,32_q1_q17_dr25_tce,5638,4.529,0.903,14.082
+FALSE POSITIVE,1,0,0,0,1,6.599708,132.0161,0.761,4.086,87.7,1.11,929,176.4,8.4,33_q1_q17_dr25_tce,6286,4.296,1.088,14.478
+FALSE POSITIVE,0.008,1,0,0,0,373.89938,261.4968,0.963,27.06,730,2.51,206,0.42,10.5,34_q1_q17_dr25_tce,5263,4.574,0.689,14.911
+FALSE POSITIVE,0.053,1,0,0,0,392.924247,383.673,0.01,11.855,120.3,1.6,347,3.43,10,35_q1_q17_dr25_tce,6596,4.073,1.44,12.162
+FALSE POSITIVE,0,0,1,0,0,522.64613,193.0389,0.007,17.77,548.1,0.8,92,0.02,10.5,36_q1_q17_dr25_tce,3439,4.939,0.518,15.279
+FALSE POSITIVE,0,0,1,0,0,338.80879,281.1563,0.92,21.669,274.1,2.13,290,1.67,24.4,37_q1_q17_dr25_tce,6158,4.082,1.666,11.976
+FALSE POSITIVE,0.024,1,0,0,0,236.2577809,153.878927,0.085,3.5549,160.4,2.69,469,10.61,5.3,38_q1_q17_dr25_tce,6645,3.952,2.054,11.338
+FALSE POSITIVE,0.197,1,0,0,0,266.977677,240.84342,0.885,8.39,389.6,7.86,349,21.53,16,39_q1_q17_dr25_tce,6628,3.985,2.41,13.357
+FALSE POSITIVE,0,1,0,0,0,309.830334,144.9846,0.73,7.965,176.1,1.8,319,2.43,8.3,40_q1_q17_dr25_tce,6293,4.265,1.262,13.147
+FALSE POSITIVE,0.3,1,0,0,0,580.04103,361.7222,0.476,5.898,371.7,1.89,217,0.53,9.9,41_q1_q17_dr25_tce,5672,4.503,0.965,13.942
+FALSE POSITIVE,0.005,1,0,0,1,361.901618,405.3021,0.093,4.904,104.1,0.95,198,0.37,8.5,42_q1_q17_dr25_tce,5053,4.608,0.717,12.670
+FALSE POSITIVE,0,1,0,0,1,73.992267,143.4333,0.446,5.692,225.6,2.86,546,20.98,7.9,43_q1_q17_dr25_tce,6371,3.878,1.885,13.791
+FALSE POSITIVE,0.05,1,0,0,0,405.65377,266.3288,0.102,11.02,521,2.03,246,0.87,7.7,44_q1_q17_dr25_tce,6102,4.528,0.887,15.24
+FALSE POSITIVE,0.198,1,0,0,0,201.173477,189.47092,0.165,2.93,759.9,18.27,583,27.38,12.1,45_q1_q17_dr25_tce,4915,3.053,6.677,11.265
+FALSE POSITIVE,1,0,1,1,1,0.634274521,131.838508,0.833,2.1622,4691.5,8.7,2496,8067.99,83.9,46_q1_q17_dr25_tce,6221,4.417,1.125,15.676
+FALSE POSITIVE,0.03,1,0,0,0,453.64875,266.6153,0.519,18.34,523.4,2.18,229,0.77,9,47_q1_q17_dr25_tce,6060,4.608,0.925,15.677
+FALSE POSITIVE,1,0,0,1,1,1.3235451,132.1018,0.295,4.143,27.4,0.62,1993,3726.12,11.6,48_q1_q17_dr25_tce,6680,4.364,1.157,15.793
+FALSE POSITIVE,1,0,0,1,1,1.32358801,132.0631,0.397,4.74,48.7,0.82,1443,1025.1,8.7,49_q1_q17_dr25_tce,5161,4.452,0.882,15.305
+`;
+
+// --- GLOBAL VARIABLES ---
+let planetDatabase = [];
+let scene, camera, renderer, planetMesh;
+let currentFilters = {
+    disposition: 'ALL',
+    search: ''
+};
+
+// --- DATA PROCESSING ---
+function parseCSV(csv) {
+    const lines = csv.trim().split('\n');
+    const headers = lines[0].split(',');
+    // Add "id" to the beginning of the headers
+    headers.unshift('id');
+    const data = lines.slice(1).map((line, lineIndex) => {
+        const values = line.split(',');
+        let obj = { id: lineIndex + 1 }; // Add unique ID
+        headers.slice(1).forEach((header, index) => { // Start headers from index 1
+            const value = values[index];
+            obj[header] = isNaN(parseFloat(value)) || !isFinite(value) ? value : parseFloat(value);
+        });
+        return obj;
+    });
+    return data;
+}
+
+function generateCSV(data) {
+    if (data.length === 0) return "";
+    const headers = Object.keys(data[0]).join(',');
+    const rows = data.map(obj => Object.values(obj).join(',')).join('\n');
+    return `${headers}\n${rows}`;
+}
+
+// --- UI FUNCTIONS ---
+function applyFilters() {
+    const { disposition, search } = currentFilters;
+    let filteredPlanets = planetDatabase;
+
+    // Apply disposition filter
+    if (disposition !== 'ALL') {
+        filteredPlanets = filteredPlanets.filter(p => p.koi_disposition.replace('_', ' ') === disposition);
+    }
+
+    // Apply search filter
+    if (search) {
+        filteredPlanets = filteredPlanets.filter(p => p.koi_tce_delivname.toLowerCase().includes(search.toLowerCase()));
+    }
+    
+    populateCatalog(filteredPlanets);
+}
+
+function populateCatalog(planets) {
+    const catalogList = document.getElementById('catalog-list');
+    catalogList.innerHTML = '';
+
+    if (planets.length === 0) {
+        catalogList.innerHTML = `<p class="text-gray-400 text-center p-4">No se encontraron resultados.</p>`;
+        return;
+    }
+
+    planets.forEach(planet => {
+        const item = document.createElement('div');
+        item.className = 'catalog-item p-2 text-sm';
+        item.dataset.id = planet.id;
+
+        const disposition = planet.koi_disposition.toLowerCase();
+        let dotColorClass = 'bg-yellow-400'; // Candidate
+        if (disposition === 'confirmed') dotColorClass = 'bg-green-400';
+        if (disposition === 'false_positive') dotColorClass = 'bg-red-400';
+        
+        item.innerHTML = `
+            <div class="flex items-center justify-between">
+                <div>
+                    <span class="font-bold text-sky-300 mr-2">${planet.id}</span>
+                    <span class="w-2 h-2 rounded-full inline-block mr-2 ${dotColorClass}"></span>
+                    <span>${planet.koi_tce_delivname}</span>
+                </div>
+            </div>`;
+
+        item.addEventListener('click', () => {
+            displayPlanetInfo(planet.id);
+            document.querySelectorAll('.catalog-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+        });
+        catalogList.appendChild(item);
+    });
+}
+
+function displayPlanetInfo(planetId) {
+    const planet = planetDatabase.find(p => p.id === planetId);
+    if (!planet) return;
+
+    document.getElementById('planet-id').textContent = `[ID: ${planet.id}] ${planet.koi_tce_delivname}`;
+    const dispositionEl = document.getElementById('planet-disposition');
+    const dispositionText = planet.koi_disposition.replace('_', ' ');
+    dispositionEl.textContent = dispositionText;
+    dispositionEl.className = 'orbitron text-4xl font-bold border-2 rounded-lg inline-block px-4 py-1 mt-1 ' + dispositionText.toLowerCase().replace(' ', '-');
+
+    const detailsGrid = document.getElementById('details-grid');
+    detailsGrid.innerHTML = `
+        <p><strong>Radio Planetario:</strong> ${planet.koi_prad ? planet.koi_prad.toFixed(2) : 'N/A'} x Tierra <span class="text-gray-400">(Tamaño)</span></p>
+        <p><strong>Periodo Orbital:</strong> ${planet.koi_period ? planet.koi_period.toFixed(2) : 'N/A'} días <span class="text-gray-400">(Año)</span></p>
+        <p><strong>Temp. Equilibrio:</strong> ${planet.koi_teq || 'N/A'} K <span class="text-gray-400">(Temperatura)</span></p>
+        <p><strong>Temp. Estrella:</strong> ${planet.koi_steff || 'N/A'} K <span class="text-gray-400">(Sol)</span></p>
+        <p><strong>Señal/Ruido (SNR):</strong> ${planet.koi_model_snr ? planet.koi_model_snr.toFixed(1) : 'N/A'} <span class="text-gray-400">(Claridad)</span></p>
+    `;
+    runOracleAnalysis(planet);
+    update3DPlanet(planet);
+}
+
+function runOracleAnalysis(planet) {
+    const explanationSection = document.getElementById('explanation-section');
+    explanationSection.innerHTML = '';
+    let evidence = { pro: [], con: [] };
+
+    if(planet.koi_score > 0.9) evidence.pro.push("Puntuación de confianza del modelo superior al 90%.");
+    else if (planet.koi_score < 0.1 && planet.koi_score !== 0) evidence.con.push("Baja puntuación de confianza del modelo.");
+    
+    let fpFlags = ['koi_fpflag_nt', 'koi_fpflag_ss', 'koi_fpflag_co', 'koi_fpflag_ec'];
+    let activeFlags = fpFlags.filter(flag => planet[flag] === 1);
+    if(activeFlags.length > 0) {
+        evidence.con.push(`Se activaron ${activeFlags.length} bandera(s) de Falso Positivo, indicando problemas.`);
+    } else {
+        evidence.pro.push("Superó todas las pruebas de Falsos Positivos automatizadas.");
+    }
+    
+    if(planet.koi_model_snr > 25) {
+        evidence.pro.push("La señal es extremadamente clara y se distingue del ruido (SNR > 25).");
+    } else if (planet.koi_model_snr < 10) {
+        evidence.con.push("La señal es débil y podría confundirse con ruido (SNR < 10).");
+    }
+
+    if(planet.koi_prad > 25) {
+        evidence.con.push(`Radio (${planet.koi_prad.toFixed(2)}x Tierra) es muy grande, podría ser una estrella enana.`);
+    } else {
+        evidence.pro.push("El radio se encuentra dentro del rango esperado para un planeta.");
+    }
+
+    explanationSection.innerHTML += '<h4 class="font-bold text-green-400">Evidencia a Favor:</h4>';
+    if(evidence.pro.length > 0) {
+        evidence.pro.forEach(item => { explanationSection.innerHTML += `<p class="text-sm evidence-item pro">✓ ${item}</p>`; });
+    } else {
+        explanationSection.innerHTML += `<p class="text-sm text-gray-400">Sin evidencia fuerte a favor.</p>`;
+    }
+
+    explanationSection.innerHTML += '<h4 class="font-bold text-red-400 mt-3">Evidencia en Contra:</h4>';
+    if(evidence.con.length > 0) {
+        evidence.con.forEach(item => { explanationSection.innerHTML += `<p class="text-sm evidence-item con">✗ ${item}</p>`; });
+    } else {
+         explanationSection.innerHTML += `<p class="text-sm text-gray-400">Sin evidencia fuerte en contra.</p>`;
+    }
+}
+
+// --- 3D FUNCTIONS ---
+function init3D() {
+    const container = document.getElementById('threejs-container');
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.z = 15;
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+    renderer.setClearColor(0x000000, 0);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    scene.add(ambientLight);
+    const pointLight = new THREE.PointLight(0xffffff, 1);
+    pointLight.position.set(20, 10, 20);
+    scene.add(pointLight);
+    const geometry = new THREE.SphereGeometry(5, 64, 64);
+    const textureLoader = new THREE.TextureLoader();
+    const texture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg');
+    const material = new THREE.MeshPhongMaterial({ map: texture });
+    planetMesh = new THREE.Mesh(geometry, material);
+    scene.add(planetMesh);
+    let isDragging = false, prevMouseX = 0, prevMouseY = 0;
+    container.onmousedown = (e) => { isDragging = true; prevMouseX = e.clientX; prevMouseY = e.clientY; };
+    container.onmouseup = container.onmouseleave = () => isDragging = false;
+    container.onmousemove = (e) => {
+        if (!isDragging) return;
+        planetMesh.rotation.y += (e.clientX - prevMouseX) * 0.005;
+        planetMesh.rotation.x += (e.clientY - prevMouseY) * 0.005;
+        prevMouseX = e.clientX; prevMouseY = e.clientY;
+    };
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+    animate();
+}
+
+function update3DPlanet(planet) {
+    if (!planetMesh) return;
+    const radius = planet.koi_prad || 1;
+    const scale = Math.log10(radius + 1) * 1.5;
+    planetMesh.scale.set(scale, scale, scale);
+    const temp = planet.koi_steff;
+    let color = new THREE.Color(0xffffff);
+    if (temp < 4000) color.set(0xffa0a0);
+    else if (temp > 7500) color.set(0xa0a0ff);
+    planetMesh.material.color = color;
+    const period = planet.koi_period || 10;
+    planetMesh.userData.rotationSpeed = 1 / (period * 50 + 1);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    if (planetMesh && planetMesh.userData.rotationSpeed) {
+        planetMesh.rotation.y += planetMesh.userData.rotationSpeed;
+    }
+    renderer.render(scene, camera);
+}
+
+// --- INITIALIZATION ---
+document.addEventListener('DOMContentLoaded', () => {
+    planetDatabase = parseCSV(planetDataCSV);
+    init3D();
+    applyFilters(); // Initial population of the catalog
+
+    if (planetDatabase.length > 0) {
+        displayPlanetInfo(planetDatabase[0].id);
+        const firstItem = document.querySelector('.catalog-item');
+        if (firstItem) firstItem.classList.add('active');
+    }
+
+    // Event Listeners
+    const searchBox = document.getElementById('search-box');
+    searchBox.addEventListener('keyup', () => {
+        currentFilters.search = searchBox.value;
+        applyFilters();
+    });
+
+    const filterContainer = document.getElementById('filter-container');
+    filterContainer.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            currentFilters.disposition = e.target.dataset.filter;
+            applyFilters();
+        }
+    });
+    
+    document.getElementById('download-csv').addEventListener('click', () => {
+        const csvContent = generateCSV(planetDatabase);
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "kepler_catalog_full.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+});
+</script>
+</body>
+</html>

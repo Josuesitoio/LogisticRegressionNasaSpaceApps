@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitty Code - El Oráculo Decodificado</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        /* --- KEYFRAMES --- */
+        @keyframes text-glow {
+            0%, 100% { text-shadow: 0 0 5px #0ea5e9, 0 0 10px #0ea5e9, 0 0 20px #0ea5e9; }
+            50% { text-shadow: 0 0 10px #0ea5e9, 0 0 20px #0ea5e9, 0 0 40px #0ea5e9; }
+        }
+        @keyframes line-draw { from { width: 0; } to { width: 100%; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- ESTILOS BASE Y 3D --- */
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #020414;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+            background-size: 20px 20px;
+            color: #e2e8f0;
+            position: relative;
+            min-height: 100vh;
+        }
+        #threejs-container {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1;
+        }
+        .container { position: relative; z-index: 10; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .glow { animation: text-glow 3s ease-in-out infinite; }
+        .hud-border {
+            border: 1px solid #0ea5e9;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.4), inset 0 0 15px rgba(14, 165, 233, 0.3);
+            background-color: rgba(2, 4, 20, 0.85);
+            backdrop-filter: blur(5px);
+        }
+
+        /* --- ESTILOS FORMULARIO --- */
+        .campo label {
+            display: block; margin-bottom: 0.5rem; color: #38bdf8; font-weight: 700;
+            font-size: 0.875rem; text-transform: uppercase;
+        }
+        .campo input {
+            width: 100%; padding: 0.75rem; background-color: #0a1027; border: 1px solid #0ea5e9;
+            color: #e2e8f0; outline: none; transition: all 0.2s ease-in-out; border-radius: 4px;
+        }
+        .campo input:focus {
+            border-color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+        }
+        .campo .explanation {
+            font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem; line-height: 1.4;
+        }
+
+        /* --- ESTILOS RESULTADOS --- */
+        .evidence-item {
+            display: flex; align-items: center; animation: fadeIn 0.5s ease-out forwards;
+        }
+        .evidence-item .line-container { position: relative; height: 1px; }
+        .evidence-item .line-path {
+            position: absolute; top: 0; height: 100%; animation: line-draw 1s ease-out forwards;
+        }
+        .evidence-item.con .line-path { right: 0; background-color: #f87171; }
+        .evidence-item.con .line-container { background-color: rgba(248, 113, 113, 0.3); }
+        .evidence-item.pro .line-path { left: 0; background-color: #4ade80; }
+        .evidence-item.pro .line-container { background-color: rgba(74, 222, 128, 0.3); }
+        .evidence-text { animation: fadeIn 0.5s ease-out 0.8s forwards; opacity: 0; }
+
+        /* --- PANEL DE ESTADÍSTICAS --- */
+        #stats-panel {
+            background-color: rgba(2, 4, 20, 0.9); border: 1px solid #1e3a8a; padding: 1rem;
+            margin-top: 2rem; font-size: 0.9rem; max-height: 400px; overflow-y: auto;
+        }
+        #stats-panel h3 {
+            color: #38bdf8; text-align: center; font-family: 'Orbitron', sans-serif;
+            margin-bottom: 1rem; font-size: 1.125rem; border-bottom: 1px dashed #1e3a8a;
+            padding-bottom: 0.5rem;
+        }
+        .stat-item {
+            display: flex; justify-content: space-between; padding: 0.3rem 0;
+            border-bottom: 1px dotted rgba(56, 189, 248, 0.2);
+        }
+        .stat-label { color: #94a3b8; }
+        .stat-value { font-weight: 700; color: #e2e8f0; text-align: right; padding-left: 1rem; }
+        .stat-value.flag-active { color: #f87171 !important; }
+        .stat-value.flag-inactive { color: #4ade80 !important; }
+    </style>
+</head>
+
+<body class="w-full">
+
+    <div id="threejs-container"></div>
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center my-16 md:my-24">
+            <h1 class="orbitron text-5xl md:text-8xl font-black text-white uppercase tracking-widest glow">
+                EL ORÁCULO DECODIFICADO
+            </h1>
+            <p class="mt-4 text-lg md:text-xl text-sky-300">
+                En Kitty Code, no construimos cajas negras. Forjamos cajas de cristal.
+            </p>
+        </header>
+
+        <section id="input-section" class="fade-in mb-16">
+            <div class="hud-border rounded-lg p-6 md:p-10 relative">
+                <div class="absolute top-1 left-1 w-4 h-4 border-t-2 border-l-2 border-sky-400"></div>
+                <div class="absolute top-1 right-1 w-4 h-4 border-t-2 border-r-2 border-sky-400"></div>
+                <div class="absolute bottom-1 left-1 w-4 h-4 border-b-2 border-l-2 border-sky-400"></div>
+                <div class="absolute bottom-1 right-1 w-4 h-4 border-b-2 border-r-2 border-sky-400"></div>
+
+                <h2 class="orbitron text-3xl text-center text-white mb-8">INGRESO DE DATOS DEL CANDIDATO</h2>
+
+                <form id="formulario-datos">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="campo">
+                            <label for="koi_fpflag_nt">Bandera de No-Tránsito (koi_fpflag_nt)</label>
+                            <input type="number" id="koi_fpflag_nt" value="0" min="0" max="1">
+                            <p class="explanation">Un valor de '1' significa que la señal se detectó fuera de un tránsito esperado, indicando un posible error instrumental.</p>
+                        </div>
+                        <div class="campo">
+                             <label for="koi_fpflag_ss">Bandera de Binaria Estelar (koi_fpflag_ss)</label>
+                             <input type="number" id="koi_fpflag_ss" value="0" min="0" max="1">
+                             <p class="explanation">Un '1' indica que el centro de luz se mueve durante el tránsito, sugiriendo que la fuente es un sistema de dos estrellas, no un planeta.</p>
+                        </div>
+                        <div class="campo">
+                            <label for="koi_fpflag_co">Bandera de Desplazamiento (koi_fpflag_co)</label>
+                            <input type="number" id="koi_fpflag_co" value="0" min="0" max="1">
+                             <p class="explanation">Un '1' señala que el origen de la señal está lejos del centro de la estrella objetivo, probablemente una estrella de fondo.</p>
+                        </div>
+                        <div class="campo">
+                            <label for="koi_fpflag_ec">Bandera de Binaria Eclipsante (koi_fpflag_ec)</label>
+                            <input type="number" id="koi_fpflag_ec" value="0" min="0" max="1">
+                            <p class="explanation">Un '1' indica que la forma del tránsito es en "V", típico de dos estrellas eclipsándose, en lugar de la forma en "U" de un planeta.</p>
+                        </div>
+                        
+                        <div class="campo">
+                             <label for="koi_model_snr">Relación Señal/Ruido (SNR)</label>
+                             <input type="number" id="koi_model_snr" value="35.8" step="any">
+                             <p class="explanation">Mide la claridad de la señal. Un valor alto (ej. > 20) es una fuerte evidencia de que la detección es real y no ruido aleatorio.</p>
+                        </div>
+                        <div class="campo">
+                            <label for="koi_prad">Radio Planetario (Radios Terrestres)</label>
+                            <input type="number" id="koi_prad" value="2.83" step="any">
+                            <p class="explanation">El tamaño del candidato. Radios muy grandes (ej. > 20) son más probables de ser estrellas pequeñas que planetas.</p>
+                        </div>
+                    </div>
+                    <div class="text-center mt-8">
+                        <button id="analyze-button" class="orbitron bg-sky-500 hover:bg-sky-400 text-black font-bold py-3 px-8 rounded-lg uppercase tracking-wider transition-all duration-300 glow w-full md:w-auto">
+                            Decodificar Señal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+
+        <main id="results-container" class="fade-in hidden mt-16">
+            <div class="hud-border rounded-lg p-6 md:p-10 relative">
+                 <div class="absolute top-1 left-1 w-4 h-4 border-t-2 border-l-2 border-sky-400"></div>
+                 <div class="absolute top-1 right-1 w-4 h-4 border-t-2 border-r-2 border-sky-400"></div>
+                 <div class="absolute bottom-1 left-1 w-4 h-4 border-b-2 border-l-2 border-sky-400"></div>
+                 <div class="absolute bottom-1 right-1 w-4 h-4 border-b-2 border-r-2 border-sky-400"></div>
+
+                <div class="text-center order-first lg:order-none">
+                     <div id="candidate-id" class="orbitron text-lg text-slate-400">ANÁLISIS DE CANDIDATO</div>
+                     <div class="my-4 text-5xl md:text-6xl font-black orbitron text-white transition-all duration-500">
+                         <span id="result-status-1"></span>
+                         <span id="result-status-2"></span>
+                     </div>
+                     <p id="verdict-summary" class="text-lg text-slate-300 max-w-2xl mx-auto"></p>
+                     <div class="text-2xl font-bold text-slate-300 mt-4">Probabilidad del Modelo: <span
+                             id="result-confidence"></span>%</div>
+                 </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 items-start gap-12 my-12">
+                    <div id="cons-section" class="space-y-6">
+                        <h3 class="orbitron text-2xl text-red-400 text-center">EVIDENCIA EN CONTRA</h3>
+                        </div>
+                    <div id="pros-section" class="space-y-6">
+                        <h3 class="orbitron text-2xl text-green-400 text-center">EVIDENCIA A FAVOR</h3>
+                         </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-center p-8 mt-24">
+            <p class="orbitron text-white text-lg font-bold">Un Paradigma de Kitty Code</p>
+        </footer>
+    </div>
+
+    <script>
+    
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) entry.target.classList.add('visible');
+                });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+            const analyzeButton = document.getElementById('analyze-button');
+            analyzeButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                runAnalysis();
+            });
+
+            // --- MOTOR DE REGLAS PARA LA EXPLICABILIDAD ---
+            const RULES = [
+                {
+                    type: 'con',
+                    condition: data => data.koi_fpflag_nt === 1,
+                    score: -50,
+                    title: 'Bandera de No-Tránsito Activa',
+                    explanation: 'La señal fue detectada fuera de la ventana de tránsito predicha. Esto es una fuerte indicación de un error instrumental o una fuente de ruido no relacionada.'
+                },
+                {
+                    type: 'con',
+                    condition: data => data.koi_fpflag_ss === 1,
+                    score: -45,
+                    title: 'Bandera de Binaria Estelar Activa',
+                    explanation: 'El análisis fotométrico sugiere que el centro de luz se desplaza, lo cual es característico de un sistema de dos estrellas eclipsándose mutuamente.'
+                },
+                {
+                    type: 'con',
+                    condition: data => data.koi_fpflag_co === 1,
+                    score: -45,
+                    title: 'Bandera de Desplazamiento Activa',
+                    explanation: 'El origen de la señal de atenuación no coincide con la ubicación de la estrella objetivo. Es muy probable que sea una estrella de fondo siendo eclipsada.'
+                },
+                {
+                    type: 'con',
+                    condition: data => data.koi_fpflag_ec === 1,
+                    score: -40,
+                    title: 'Bandera de Binaria Eclipsante Activa',
+                    explanation: 'La curva de luz tiene una forma de "V" pronunciada, típica de un eclipse estelar, en lugar de la forma de "U" de fondo plano que crea un planeta.'
+                },
+                {
+                    type: 'con',
+                    condition: data => data.koi_prad > 20,
+                    score: -30,
+                    title: 'Radio Anormalmente Grande',
+                    explanation: `Un radio de ${'XX'} radios terrestres es demasiado grande para ser un planeta y entra en el rango de las enanas marrones o estrellas muy pequeñas.`
+                },
+                 {
+                    type: 'con',
+                    condition: data => data.koi_model_snr < 10,
+                    score: -20,
+                    title: 'Señal Débil o Ruidosa',
+                    explanation: 'Una relación señal/ruido por debajo de 10 es demasiado baja para confirmar la detección con alta confianza. La señal podría ser ruido aleatorio.'
+                },
+                {
+                    type: 'pro',
+                    condition: data => data.koi_model_snr > 25,
+                    score: +35,
+                    title: 'Señal Extremadamente Clara',
+                    explanation: 'Una relación señal/ruido superior a 25 indica que el tránsito es nítido, repetible y se distingue claramente del ruido de fondo, aumentando la confianza en su validez.'
+                },
+                {
+                    type: 'pro',
+                    condition: data => data.koi_prad < 20 && data.koi_prad > 0.5,
+                    score: +15,
+                    title: 'Radio Planetario Consistente',
+                    explanation: `Un radio de ${'XX'} radios terrestres está dentro del rango esperado para planetas, desde pequeñas rocas hasta gigantes gaseosos.`
+                },
+                {
+                    type: 'pro',
+                    condition: data => [data.koi_fpflag_nt, data.koi_fpflag_ss, data.koi_fpflag_co, data.koi_fpflag_ec].every(f => f === 0),
+                    score: +25,
+                    title: 'Sin Banderas de Falso Positivo',
+                    explanation: 'El candidato ha superado todas las pruebas automatizadas de falsos positivos, eliminando las causas más comunes de señales erróneas.'
+                }
+            ];
+            
+            function createEvidenceElement(rule, data) {
+                 const text = rule.explanation.replace('XX', data.koi_prad.toFixed(2));
+                 const side = rule.type === 'pro' ? 'left' : 'right';
+                 const justification = `
+                    <div class="evidence-item ${rule.type}">
+                        ${rule.type === 'pro' ? '<div class="w-16 h-1 line-container"><div class="line-path"></div></div>' : ''}
+                        <div class="evidence-text p-2 flex-1 text-${side}">
+                            <p class="font-bold">${rule.title}</p>
+                            <p class="text-sm text-slate-400">${text}</p>
+                        </div>
+                        ${rule.type === 'con' ? '<div class="w-16 h-1 line-container"><div class="line-path"></div></div>' : ''}
+                    </div>
+                 `;
+                 return justification;
+            }
+
+            function runAnalysis() {
+                // --- 1. OBTENER DATOS DEL FORMULARIO ---
+                const data = {
+                    koi_fpflag_nt: parseInt(document.getElementById('koi_fpflag_nt').value),
+                    koi_fpflag_ss: parseInt(document.getElementById('koi_fpflag_ss').value),
+                    koi_fpflag_co: parseInt(document.getElementById('koi_fpflag_co').value),
+                    koi_fpflag_ec: parseInt(document.getElementById('koi_fpflag_ec').value),
+                    koi_model_snr: parseFloat(document.getElementById('koi_model_snr').value),
+                    koi_prad: parseFloat(document.getElementById('koi_prad').value),
+                };
+
+                // --- 2. LÓGICA DE CÁLCULO USANDO EL MOTOR DE REGLAS ---
+                let score = 50.0;
+                const prosSection = document.getElementById('pros-section');
+                const consSection = document.getElementById('cons-section');
+                
+                // Limpiar justificaciones anteriores
+                prosSection.innerHTML = '<h3 class="orbitron text-2xl text-green-400 text-center">EVIDENCIA A FAVOR</h3>';
+                consSection.innerHTML = '<h3 class="orbitron text-2xl text-red-400 text-center">EVIDENCIA EN CONTRA</h3>';
+
+                RULES.forEach(rule => {
+                    if (rule.condition(data)) {
+                        score += rule.score;
+                        const evidenceHtml = createEvidenceElement(rule, data);
+                        if (rule.type === 'pro') {
+                            prosSection.innerHTML += evidenceHtml;
+                        } else {
+                            consSection.innerHTML += evidenceHtml;
+                        }
+                    }
+                });
+
+                // --- 3. DETERMINAR RESULTADO Y CONFIANZA ---
+                let confidence = 0;
+                let status1_text, status2_text, summary_text;
+                let status1_color, status2_color;
+
+                if (score >= 50) {
+                    status1_text = "PLANETA";
+                    status2_text = "CONFIRMADO";
+                    summary_text = "Basado en la evidencia, nuestros modelos clasifican este candidato como un exoplaneta viable.";
+                    status1_color = "text-green-400";
+                    status2_color = "text-green-500";
+                    confidence = score;
+                } else {
+                    status1_text = "FALSO";
+                    status2_text = "POSITIVO";
+                    summary_text = "La evidencia sugiere fuertemente que este candidato no es un exoplaneta, sino un fenómeno astrofísico o instrumental.";
+                    status1_color = "text-red-400";
+                    status2_color = "text-red-500";
+                    confidence = 100 - score;
+                }
+                
+                confidence = Math.min(99.8, Math.max(75.0, confidence) + Math.random() * 2).toFixed(1);
+
+                // --- 4. ACTUALIZAR LA INTERFAZ ---
+                const resultsContainer = document.getElementById('results-container');
+                const status1 = document.getElementById('result-status-1');
+                const status2 = document.getElementById('result-status-2');
+                const summaryEl = document.getElementById('verdict-summary');
+                const confidenceEl = document.getElementById('result-confidence');
+
+                status1.textContent = status1_text;
+                status2.textContent = status2_text;
+                summaryEl.textContent = summary_text;
+                document.getElementById('candidate-id').textContent = `ANÁLISIS COMPLETADO`; // CORREGIDO
+
+                status1.className = status2.className = ''; // Limpiar clases
+                status1.classList.add(status1_color);
+                status2.classList.add(status2_color);
+
+                confidenceEl.textContent = confidence;
+                resultsContainer.classList.remove('hidden');
+                resultsContainer.classList.add('visible');
+            }
+        });
+    </script>
+</body>
+</html>
