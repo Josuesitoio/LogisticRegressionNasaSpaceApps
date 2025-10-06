@@ -12,7 +12,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Roboto+Mono:wght@400;700&display=swap"
         rel="stylesheet">
     <style>
-        /* --- KEYFRAMES --- */
+        /* --- KEYFRAMES (Mantenidos) --- */
+        @keyframes background-pan {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
         @keyframes text-glow {
 
             0%,
@@ -26,28 +40,48 @@
         }
 
         @keyframes line-draw-right {
-            from { width: 0; } to { width: 100%; }
+            from {
+                width: 0;
+            }
+
+            to {
+                width: 100%;
+            }
         }
 
         @keyframes line-draw-left {
-            from { width: 0; } to { width: 100%; }
+            from {
+                width: 0;
+            }
+
+            to {
+                width: 100%;
+            }
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; } to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
-        /* --- ESTILOS BASE Y 3D --- */
+        /* --- ESTILOS BASE Y POSICIONAMIENTO 3D (Corregido) --- */
         body {
             font-family: 'Roboto Mono', monospace;
             background-color: #020414;
             background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
             background-size: 20px 20px;
             color: #e2e8f0;
+            /* Estos dos son CLAVE para que el contenido esté sobre el fondo 3D */
             position: relative;
             min-height: 100vh;
         }
 
+        /* Contenedor 3D para posicionar el canvas - CLAVE */
         #threejs-container {
             position: fixed;
             top: 0;
@@ -55,11 +89,13 @@
             width: 100vw;
             height: 100vh;
             z-index: -1;
+            /* Envía el fondo al detrás */
         }
 
         .container {
             position: relative;
             z-index: 10;
+            /* Asegura que el contenido esté sobre el canvas */
         }
 
         .orbitron {
@@ -70,14 +106,16 @@
             animation: text-glow 3s ease-in-out infinite;
         }
 
+        /* Estilo de recuadro HUD (Corregido: añadimos fondo y blur para contraste) */
         .hud-border {
             border: 1px solid #0ea5e9;
             box-shadow: 0 0 15px rgba(14, 165, 233, 0.4), inset 0 0 15px rgba(14, 165, 233, 0.3);
             background-color: rgba(2, 4, 20, 0.8);
+            /* Fondo semi-transparente oscuro */
             backdrop-filter: blur(5px);
         }
 
-        /* --- FORMULARIO --- */
+        /* --- ESTILOS FORMULARIO (Mantenidos) --- */
         .grupo-entradas {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -108,8 +146,12 @@
             border-color: #38bdf8;
             box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
         }
-        
-        /* --- ANIMACIONES Y UI --- */
+
+        .boton-analizar {
+            display: none;
+        }
+
+        /* --- ESTILOS ANIMACIÓN Y TRANSICIÓN (Mantenidos) --- */
         .fade-in {
             opacity: 0;
             transform: translateY(30px);
@@ -121,11 +163,24 @@
             transform: translateY(0);
         }
 
-        .line-path.animate-right { animation: line-draw-right 1s ease-out forwards; }
-        .line-path.animate-left { animation: line-draw-left 1s ease-out forwards; }
-        .evidence-label { opacity: 0; animation: fadeIn 0.5s ease-out 1s forwards; }
+        .line-path {
+            animation: none;
+        }
+
+        .line-path.animate-right {
+            animation: line-draw-right 1s ease-out forwards;
+        }
+
+        .line-path.animate-left {
+            animation: line-draw-left 1s ease-out forwards;
+        }
+
+        .evidence-label {
+            opacity: 0;
+            animation: fadeIn 0.5s ease-out 1s forwards;
+        }
         
-        /* --- PANEL DE ESTADÍSTICAS --- */
+        /* --- ESTILOS PANEL DE ESTADÍSTICAS (Añadidos) --- */
         #stats-panel {
             background-color: rgba(2, 4, 20, 0.9);
             border: 1px solid #1e3a8a;
@@ -135,15 +190,40 @@
             max-height: 400px;
             overflow-y: auto;
         }
+
         #stats-panel h3 {
-            color: #38bdf8; text-align: center; font-family: 'Orbitron', sans-serif;
-            margin-bottom: 1rem; font-size: 1.125rem; border-bottom: 1px dashed #1e3a8a;
+            color: #38bdf8;
+            text-align: center;
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 1rem;
+            font-size: 1.125rem;
+            border-bottom: 1px dashed #1e3a8a;
             padding-bottom: 0.5rem;
         }
-        .stat-item { display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px dotted rgba(56, 189, 248, 0.2); }
-        .stat-label { color: #94a3b8; flex-grow: 1; }
-        .stat-value { font-weight: 700; color: #e2e8f0; text-align: right; padding-left: 1rem; }
-        .flag-value { color: #f87171; font-weight: 700; }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.3rem 0;
+            border-bottom: 1px dotted rgba(56, 189, 248, 0.2);
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            flex-grow: 1;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: #e2e8f0;
+            text-align: right;
+            padding-left: 1rem;
+        }
+
+        .flag-value {
+            color: #f87171;
+            font-weight: 700;
+        }
     </style>
 </head>
 
@@ -173,41 +253,92 @@
                 <div class="contenedor-formulario mt-12">
                     <form id="formulario-datos">
                         <div class="grupo-entradas">
-                             <div class="campo"> <label for="koi_fpflag_nt">koi_fpflag_nt:</label> <input type="number" id="koi_fpflag_nt" name="koi_fpflag_nt" placeholder="0 o 1" min="0" max="1" required value="0"> </div>
-                             <div class="campo"> <label for="koi_fpflag_ss">koi_fpflag_ss:</label> <input type="number" id="koi_fpflag_ss" name="koi_fpflag_ss" placeholder="0 o 1" min="0" max="1" required value="0"> </div>
-                             <div class="campo"> <label for="koi_fpflag_co">koi_fpflag_co:</label> <input type="number" id="koi_fpflag_co" name="koi_fpflag_co" placeholder="0 o 1" min="0" max="1" required value="1"> </div>
-                             <div class="campo"> <label for="koi_fpflag_ec">koi_fpflag_ec:</label> <input type="number" id="koi_fpflag_ec" name="koi_fpflag_ec" placeholder="0 o 1" min="0" max="1" required value="0"> </div>
-                             <div class="campo"> <label for="koi_model_snr">koi_model_snr:</label> <input type="number" id="koi_model_snr" name="koi_model_snr" placeholder="Ej: 12.3" step="any" required value="12.3"> </div>
-                             <div class="campo"> <label for="koi_depth">koi_depth:</label> <input type="number" id="koi_depth" name="koi_depth" placeholder="Ej: 103.6" step="any" required value="103.6"> </div>
-                             <div class="campo"> <label for="koi_period">koi_period:</label> <input type="number" id="koi_period" name="koi_period" placeholder="Ej: 0.6814" step="any" required value="0.681401611"> </div>
-                             <div class="campo"> <label for="koi_duration">koi_duration:</label> <input type="number" id="koi_duration" name="koi_duration" placeholder="Ej: 0.865" step="any" required value="0.865"> </div>
-                             <div class="campo"> <label for="koi_prad">koi_prad:</label> <input type="number" id="koi_prad" name="koi_prad" placeholder="Ej: 1.07" step="any" required value="1.07"> </div>
-                             <div class="campo"> <label for="koi_steff">koi_steff:</label> <input type="number" id="koi_steff" name="koi_steff" placeholder="Ej: 6173" step="any" required value="6173"> </div>
-                             <div class="campo"> <label for="koi_slogg">koi_slogg:</label> <input type="number" id="koi_slogg" name="koi_slogg" placeholder="Ej: 4.447" step="any" required value="4.447"> </div>
-                             <div class="campo"> <label for="koi_srad">koi_srad:</label> <input type="number" id="koi_srad" name="koi_srad" placeholder="Ej: 1.041" step="any" required value="1.041"> </div>
-                             <div class="campo"> <label for="koi_tce_delivname">ID del Evento:</label> <input type="text" id="koi_tce_delivname" name="koi_tce_delivname" placeholder="Ej: K00681.01" required value="K00681.01"> </div>
+                            <div class="campo"> <label for="koi_fpflag_nt">Bandera de No-Tránsito
+                                        (koi_fpflag_nt):</label> <input type="number" id="koi_fpflag_nt"
+                                        name="koi_fpflag_nt" placeholder="0 o 1" min="0" max="1" required value="0">
+                            </div>
+                            <div class="campo"> <label for="koi_fpflag_ss">Bandera de Binaria Estelar
+                                        (koi_fpflag_ss):</label> <input type="number" id="koi_fpflag_ss"
+                                        name="koi_fpflag_ss" placeholder="0 o 1" min="0" max="1" required value="0">
+                            </div>
+                            <div class="campo"> <label for="koi_fpflag_co">Bandera de Conflicto (koi_fpflag_co):</label>
+                                <input type="number" id="koi_fpflag_co" name="koi_fpflag_co" placeholder="0 o 1" min="0"
+                                        max="1" required value="1">
+                            </div>
+                            <div class="campo"> <label for="koi_fpflag_ec">Bandera de Binaria Eclíptica
+                                        (koi_fpflag_ec):</label> <input type="number" id="koi_fpflag_ec"
+                                        name="koi_fpflag_ec" placeholder="0 o 1" min="0" max="1" required value="0">
+                            </div>
+                            <div class="campo"> <label for="koi_model_snr">Relación Señal/Ruido (koi_model_snr):</label>
+                                <input type="number" id="koi_model_snr" name="koi_model_snr" placeholder="Ej: 12.3"
+                                        step="any" required value="12.3">
+                            </div>
+                            <div class="campo"> <label for="koi_depth">Profundidad del Tránsito (koi_depth):</label>
+                                <input type="number" id="koi_depth" name="koi_depth" placeholder="Ej: 103.6" step="any"
+                                        required value="103.6">
+                            </div>
+                            <div class="campo"> <label for="koi_period">Período Orbital (Días) (koi_period):</label>
+                                <input type="number" id="koi_period" name="koi_period" placeholder="Ej: 0.6814"
+                                        step="any" required value="0.681401611">
+                            </div>
+                            <div class="campo"> <label for="koi_duration">Duración del Tránsito (Horas)
+                                        (koi_duration):</label> <input type="number" id="koi_duration"
+                                        name="koi_duration" placeholder="Ej: 0.865" step="any" required value="0.865">
+                            </div>
+                            <div class="campo"> <label for="koi_prad">Radio Planetario (Radio Terrestre)
+                                        (koi_prad):</label> <input type="number" id="koi_prad" name="koi_prad"
+                                        placeholder="Ej: 1.07" step="any" required value="1.07">
+                            </div>
+                            <div class="campo"> <label for="koi_steff">Temperatura Estelar Efectiva (K)
+                                        (koi_steff):</label> <input type="number" id="koi_steff" name="koi_steff"
+                                        placeholder="Ej: 6173" step="any" required value="6173">
+                            </div>
+                            <div class="campo"> <label for="koi_slogg">Gravedad Superficial Estelar (log g)
+                                        (koi_slogg):</label> <input type="number" id="koi_slogg" name="koi_slogg"
+                                        placeholder="Ej: 4.447" step="any" required value="4.447">
+                            </div>
+                            <div class="campo"> <label for="koi_srad">Radio Estelar (Radio Solar) (koi_srad):</label>
+                                <input type="number" id="koi_srad" name="koi_srad" placeholder="Ej: 1.041" step="any"
+                                        required value="1.041">
+                            </div>
+                            <div class="campo"> <label for="koi_tce_delivname">ID de Evento de Tránsito
+                                        (koi_tce_delivname):</label> <input type="text" id="koi_tce_delivname"
+                                        name="koi_tce_delivname" placeholder="Ej: K00681.01" required value="K00681.01">
+                            </div>
+                        </div>
+                        <div class="contenedor-boton">
+                            <button type="submit" class="boton-analizar">
+                                ANALIZAR DATOS EXOPLANETARIOS
+                            </button>
                         </div>
                     </form>
+                    <div id="mensaje-resultado" style="display: none;"></div>
                 </div>
 
                 <div class="text-center mt-8">
-                    <button id="analyze-button" class="orbitron bg-sky-500 hover:bg-sky-400 text-black font-bold py-3 px-8 rounded-lg uppercase tracking-wider transition-all duration-300 glow w-full">
+                    <button id="analyze-button"
+                        class="orbitron bg-sky-500 hover:bg-sky-400 text-black font-bold py-3 px-8 rounded-lg uppercase tracking-wider transition-all duration-300 glow w-full">
                         Decodificar Señal
                     </button>
                 </div>
             </div>
-            <div id="stats-panel" class="hud-border rounded-lg hidden"></div>
+
+            <div id="stats-panel" class="hud-border rounded-lg hidden">
+                </div>
         </section>
 
+
         <main id="results-container" class="fade-in hidden mt-16">
-             <div class="hud-border rounded-lg p-6 md:p-10 relative">
+            <div class="hud-border rounded-lg p-6 md:p-10 relative">
                 <div class="absolute top-1 left-1 w-4 h-4 border-t-2 border-l-2 border-sky-400"></div>
                 <div class="absolute top-1 right-1 w-4 h-4 border-t-2 border-r-2 border-sky-400"></div>
                 <div class="absolute bottom-1 left-1 w-4 h-4 border-b-2 border-l-2 border-sky-400"></div>
                 <div class="absolute bottom-1 right-1 w-4 h-4 border-b-2 border-r-2 border-sky-400"></div>
 
                 <p class="text-center text-lg text-slate-300 mb-8">
-                    Cualquier IA puede dar una respuesta. La nuestra inicia una conversación. Exigimos transparencia absoluta.
+                    Cualquier IA puede dar una respuesta. La nuestra inicia una conversación. Rechazamos el dogma de la
+                    predicción ciega. Exigimos transparencia absoluta. Así es como nuestra IA justifica cada una de sus
+                    conclusiones, transformando la duda en certeza digital.
                 </p>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 items-center gap-8 my-12">
@@ -215,126 +346,390 @@
                         <h3 class="orbitron text-2xl text-red-400 text-center lg:text-right">EVIDENCIA EN CONTRA</h3>
                         <div id="con-item-1" class="hidden con-line flex items-center justify-end">
                             <div class="evidence-label text-right mr-4">
-                                <p class="font-bold">koi_fpflag_co = 1</p> <p class="text-sm text-slate-400">Señal Desplazada</p>
+                                <p class="font-bold">koi_fpflag_co = 1</p>
+                                <p class="text-sm text-slate-400">Señal Desplazada</p>
                             </div>
-                            <div class="w-16 h-1 bg-red-500/50 relative"> <div class="line-path absolute top-0 right-0 h-1 bg-red-500"></div> </div>
+                            <div class="w-16 h-1 bg-red-500/50 relative">
+                                <div class="line-path absolute top-0 right-0 h-1 bg-red-500"></div>
+                            </div>
                         </div>
                         <div id="con-item-2" class="hidden con-line flex items-center justify-end">
                             <div class="evidence-label text-right mr-4">
-                                <p class="font-bold">koi_prad > 20</p> <p class="text-sm text-slate-400">Radio Anormalmente Grande</p>
+                                <p class="font-bold">koi_prad > 20</p>
+                                <p class="text-sm text-slate-400">Radio Anormalmente Grande</p>
                             </div>
-                            <div class="w-12 h-1 bg-red-500/50 relative"> <div class="line-path absolute top-0 right-0 h-1 bg-red-500"></div> </div>
+                            <div class="w-12 h-1 bg-red-500/50 relative">
+                                <div class="line-path absolute top-0 right-0 h-1 bg-red-500"></div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="text-center order-first lg:order-none">
                         <div id="candidate-id" class="orbitron text-lg text-slate-400">ANÁLISIS DE CANDIDATO</div>
-                        <div class="my-4 text-5xl md:text-6xl font-black orbitron text-white transition-all duration-500">
-                            <span id="result-status-1"></span> <span id="result-status-2"></span>
+                        <div
+                            class="my-4 text-5xl md:text-6xl font-black orbitron text-white transition-all duration-500">
+                            <span id="result-status-1"></span>
+                            <span id="result-status-2"></span>
                         </div>
-                        <div class="text-2xl font-bold text-slate-300">Confianza del Oráculo: <span id="result-confidence"></span>%</div>
+                        <div class="text-2xl font-bold text-slate-300">Confianza del Oráculo: <span
+                                id="result-confidence"></span>%</div>
                     </div>
 
                     <div id="pros-section" class="space-y-6">
                         <h3 class="orbitron text-2xl text-green-400 text-center lg:text-left">EVIDENCIA A FAVOR</h3>
                         <div id="pro-item-1" class="hidden pro-line flex items-center">
-                            <div class="w-24 h-1 bg-green-500/50 relative"> <div class="line-path absolute top-0 left-0 h-1 bg-green-500"></div> </div>
+                            <div class="w-24 h-1 bg-green-500/50 relative">
+                                <div class="line-path absolute top-0 left-0 h-1 bg-green-500"></div>
+                            </div>
                             <div class="evidence-label text-left ml-4">
-                                <p class="font-bold">koi_model_snr > 25</p> <p class="text-sm text-slate-400">Señal Extremadamente Clara</p>
+                                <p class="font-bold">koi_model_snr > 25</p>
+                                <p class="text-sm text-slate-400">Señal Extremadamente Clara</p>
                             </div>
                         </div>
                         <div id="pro-item-2" class="hidden pro-line flex items-center">
-                            <div class="w-16 h-1 bg-green-500/50 relative"> <div class="line-path absolute top-0 left-0 h-1 bg-green-500"></div> </div>
+                            <div class="w-16 h-1 bg-green-500/50 relative">
+                                <div class="line-path absolute top-0 left-0 h-1 bg-green-500"></div>
+                            </div>
                             <div class="evidence-label text-left ml-4">
-                                <p class="font-bold">koi_depth < 10000</p> <p class="text-sm text-slate-400">Profundidad Planetaria</p>
+                                <p class="font-bold">koi_depth < 10000</p>
+                                <p class="text-sm text-slate-400">Profundidad Planetaria</p>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <div class="text-center mt-12">
+                    <h2 class="orbitron text-3xl font-bold text-white">TRANSPARENCIA TOTAL.</h2>
+                    <p class="text-slate-400 text-lg mt-2">No es magia. Es matemática revelada.</p>
+                </div>
+
             </div>
         </main>
 
-        <footer class="text-center p-8 mt-16">
+        <footer class="text-center p-8 mt-24">
             <p class="orbitron text-white text-lg font-bold">Un Paradigma de Kitty Code</p>
         </footer>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- CONFIGURACIÓN INICIAL Y 3D ---
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            const container3D = document.getElementById('threejs-container');
-            
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setClearColor(0x000000, 0);
-            container3D.appendChild(renderer.domElement);
-            camera.position.z = 30;
-            
-            scene.add(new THREE.AmbientLight(0xffffff, 0.2));
-            const pointLight = new THREE.PointLight(0xffffff, 1.5);
-            pointLight.position.set(-15, 5, -15);
-            scene.add(pointLight);
+        // --- DATOS DEL EXOPLANETA (Tomados de tus placeholders para el HUD) ---
+        // Este objeto se actualizará con los valores del formulario al hacer click en el botón
+        let EXOPLANET_DATA = {
+            'koi_fpflag_nt': { label: 'Bandera No-Tránsito', value: 0, unit: '' },
+            'koi_fpflag_ss': { label: 'Bandera Binaria Estelar', value: 0, unit: '' },
+            'koi_fpflag_co': { label: 'Bandera de Conflicto', value: 1, unit: ' (Riesgo Alto)' },
+            'koi_fpflag_ec': { label: 'Bandera Binaria Eclíptica', value: 0, unit: '' },
+            'koi_model_snr': { label: 'Relación Señal/Ruido', value: 12.3, unit: '' },
+            'koi_depth': { label: 'Profundidad Tránsito', value: 103.6, unit: ' ppm' },
+            'koi_period': { label: 'Período Orbital', value: 0.681401611, unit: ' Días' },
+            'koi_duration': { label: 'Duración Tránsito', value: 0.865, unit: ' Horas' },
+            'koi_prad': { label: 'Radio Planetario', value: 1.07, unit: ' R_Tierra' },
+            'koi_steff': { label: 'Temp. Estelar Efectiva', value: 6173, unit: ' K' },
+            'koi_slogg': { label: 'Gravedad Estelar (log g)', value: 4.447, unit: '' },
+            'koi_srad': { label: 'Radio Estelar', value: 1.041, unit: ' R_Sol' },
+            'koi_tce_delivname': { label: 'ID del Evento', value: 'K00681.01', unit: '' }
+        };
 
-            let planetMesh;
-            try {
-                const textureLoader = new THREE.TextureLoader();
-                const venusTexture = textureLoader.load('https://threejs.org/examples/textures/planets/venus/venusmap.jpg');
-                const geometry = new THREE.SphereGeometry(10, 64, 64);
-                const material = new THREE.MeshStandardMaterial({ map: venusTexture, roughness: 0.9 });
-                planetMesh = new THREE.Mesh(geometry, material);
-                scene.add(planetMesh);
-            } catch (e) { console.error("Error al crear el planeta 3D:", e); }
+        /*
+        *************************************************
+        * LÓGICA THREE.JS (3D)                *
+        *************************************************
+        */
+        const container3D = document.getElementById('threejs-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        const textureLoader = new THREE.TextureLoader();
 
-            const starVertices = [];
-            for (let i = 0; i < 10000; i++) {
-                starVertices.push((Math.random() - 0.5) * 2000, (Math.random() - 0.5) * 2000, (Math.random() - 0.5) * 2000);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        container3D.appendChild(renderer.domElement);
+        renderer.setClearColor(0x000000, 0); // Fondo transparente para ver el body
+
+        // Incluir OrbitControls manualmente
+        const OrbitControls = function (camera, domElement) {
+            this.camera = camera;
+            this.domElement = domElement;
+            this.enabled = true;
+            this.target = new THREE.Vector3();
+            this.minDistance = 0;
+            this.maxDistance = Infinity;
+            this.enableDamping = true;
+            this.dampingFactor = 0.05;
+            this.rotateSpeed = 0.2;
+            this.zoomSpeed = 1.0;
+
+            let scope = this;
+            let rotateStart = new THREE.Vector2();
+            let rotateEnd = new THREE.Vector2();
+            let rotateDelta = new THREE.Vector2();
+            let dollyStart = new THREE.Vector2();
+            let dollyEnd = new THREE.Vector2();
+            let dollyDelta = new THREE.Vector2();
+
+            const STATE = { NONE: -1, ROTATE: 0, DOLLY: 1, PAN: 2 };
+            let state = STATE.NONE;
+
+            function onPointerDown(event) {
+                if (scope.enabled === false) return;
+                event.preventDefault();
+
+                switch (event.button) {
+                    case 0: // Left click
+                        state = STATE.ROTATE;
+                        rotateStart.set(event.clientX, event.clientY);
+                        break;
+                    case 2: // Right click (Pan in OrbitControls)
+                        state = STATE.PAN;
+                        break;
+                    default:
+                        state = STATE.NONE;
+                }
+
+                scope.domElement.ownerDocument.addEventListener('pointermove', onPointerMove);
+                scope.domElement.ownerDocument.addEventListener('pointerup', onPointerUp);
             }
+
+            function onPointerMove(event) {
+                if (scope.enabled === false) return;
+                event.preventDefault();
+
+                if (state === STATE.ROTATE) {
+                    rotateEnd.set(event.clientX, event.clientY);
+                    rotateDelta.subVectors(rotateEnd, rotateStart).multiplyScalar(scope.rotateSpeed);
+
+                    const element = scope.domElement;
+                    rotateLeft(2 * Math.PI * rotateDelta.x / element.clientHeight);
+                    rotateUp(2 * Math.PI * rotateDelta.y / element.clientHeight);
+
+                    rotateStart.copy(rotateEnd);
+                    scope.update();
+                }
+            }
+
+            function onPointerUp(event) {
+                if (scope.enabled === false) return;
+                scope.domElement.ownerDocument.removeEventListener('pointermove', onPointerMove);
+                scope.domElement.ownerDocument.removeEventListener('pointerup', onPointerUp);
+                state = STATE.NONE;
+            }
+
+            function onMouseWheel(event) {
+                if (scope.enabled === false) return;
+                event.preventDefault();
+                dolly(event.deltaY * 0.01 * scope.zoomSpeed);
+                scope.update();
+            }
+
+            function rotateLeft(angle) {
+                const axis = new THREE.Vector3(0, 1, 0);
+                const quaternion = new THREE.Quaternion().setFromAxisAngle(axis, angle);
+                scope.camera.position.applyQuaternion(quaternion);
+            }
+
+            function rotateUp(angle) {
+                const vector = new THREE.Vector3(0, 1, 0).cross(scope.camera.position).normalize();
+                const quaternion = new THREE.Quaternion().setFromAxisAngle(vector, angle);
+                scope.camera.position.applyQuaternion(quaternion);
+            }
+
+            function dolly(dollyBy) {
+                const direction = new THREE.Vector3().subVectors(scope.camera.position, scope.target).normalize();
+                scope.camera.position.addScaledVector(direction, dollyBy);
+            }
+
+            // Attach listeners
+            scope.domElement.addEventListener('contextmenu', (event) => event.preventDefault());
+            scope.domElement.addEventListener('pointerdown', onPointerDown);
+            scope.domElement.addEventListener('wheel', onMouseWheel, { passive: false });
+
+            this.update = function () {
+                const distance = scope.camera.position.distanceTo(scope.target);
+                if (distance > scope.maxDistance) {
+                    scope.camera.position.setLength(scope.maxDistance).add(scope.target);
+                } else if (distance < scope.minDistance) {
+                    scope.camera.position.setLength(scope.minDistance).add(scope.target);
+                }
+                scope.camera.lookAt(scope.target);
+                return true;
+            };
+
+            this.dispose = function () {
+                scope.domElement.removeEventListener('pointerdown', onPointerDown);
+                scope.domElement.removeEventListener('wheel', onMouseWheel);
+                scope.domElement.removeEventListener('contextmenu', (event) => event.preventDefault());
+            };
+        };
+
+        // Configuración de Controles
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.minDistance = 15;
+        controls.maxDistance = 50;
+
+        camera.position.set(0, 0, 30);
+        controls.target.set(0, 0, 0);
+        controls.update();
+
+        // Iluminación
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+        scene.add(ambientLight);
+
+        const mainLight = new THREE.PointLight(0xffffff, 2.0, 100);
+        mainLight.position.set(-15, 5, -15);
+        scene.add(mainLight);
+
+        // Geometría del Planeta
+        let planetMesh = null;
+        const PLANET_RADIUS = 10;
+
+        function createExoplanet() {
+            const geometry = new THREE.SphereGeometry(PLANET_RADIUS, 64, 64);
+
+            // Textura de Venus (simulación del exoplaneta)
+            const venusTexture = textureLoader.load(
+                'https://threejs.org/examples/textures/planets/venus/venusmap.jpg', // Usamos una URL directa para mayor compatibilidad
+                undefined,
+                undefined,
+                (error) => { console.error('Error al cargar la textura de Venus:', error); }
+            );
+
+            // Material con textura y ligera auto-emisión
+            const material = new THREE.MeshPhongMaterial({
+                map: venusTexture,
+                shininess: 100,
+                emissive: 0x331100,
+                emissiveIntensity: 1
+            });
+
+            planetMesh = new THREE.Mesh(geometry, material);
+            scene.add(planetMesh);
+        }
+
+        // Campo de Estrellas
+        function createStarfield() {
             const starGeometry = new THREE.BufferGeometry();
-            starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
-            const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.7 });
+            const starMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.5,
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                sizeAttenuation: true
+            });
+
+            const vertices = [];
+            for (let i = 0; i < 5000; i++) {
+                const x = (Math.random() - 0.5) * 1000;
+                const y = (Math.random() - 0.5) * 1000;
+                const z = (Math.random() - 0.5) * 1000;
+                vertices.push(x, y, z);
+            }
+            starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+
             const stars = new THREE.Points(starGeometry, starMaterial);
             scene.add(stars);
+        }
 
-            function animate() {
-                requestAnimationFrame(animate);
-                if (planetMesh) planetMesh.rotation.y += 0.001;
-                renderer.render(scene, camera);
+        // Lógica del HUD (Injectar Datos)
+        function renderHUD(data) {
+            const panel = document.getElementById('stats-panel');
+            if (!panel) return; // Asegura que el panel existe antes de intentar manipularlo
+
+            let html = '<h3>DATOS DEL CANDIDATO KEPLER</h3>';
+
+            // Orden de visualización
+            const displayOrder = [
+                'koi_tce_delivname',
+                'koi_prad', 'koi_period', 'koi_depth', 'koi_model_snr',
+                'koi_fpflag_co', 'koi_fpflag_nt', 'koi_fpflag_ss', 'koi_fpflag_ec',
+                'koi_steff', 'koi_slogg', 'koi_srad',
+            ];
+
+            displayOrder.forEach(key => {
+                const item = data[key];
+                if (!item) return;
+
+                let valueDisplay = (typeof item.value === 'number' && item.value > 100)
+                    ? item.value.toFixed(0)
+                    : (typeof item.value === 'number') ? item.value.toFixed(3) : item.value;
+
+                // Estilos especiales para banderas binarias
+                let valueClass = 'stat-value';
+                if (key.includes('fpflag') && item.value === 1) {
+                    valueClass += ' flag-value'; // Naranja/Rojo para indicar el "flag" activo
+                } else if (key.includes('fpflag') && item.value === 0) {
+                    valueClass += ' text-green-400'; // Verde si no hay flag (0)
+                }
+
+
+                html += `
+                    <div class="stat-item">
+                        <span class="stat-label">${item.label} (${key}):</span>
+                        <span class="${valueClass}">${valueDisplay}</span>
+                        <span class="stat-unit">${item.unit}</span>
+                    </div>
+                `;
+            });
+
+            panel.innerHTML = html;
+        }
+
+        // Ciclo de Animación
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (planetMesh) {
+                planetMesh.rotation.y += 0.005;
             }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Manejo de redimensionamiento
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        /*
+        *************************************************
+        * LÓGICA UI Y PREDICCIÓN (FUSIONADA)  *
+        *************************************************
+        */
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializar la animación y el HUD
+            createExoplanet();
+            createStarfield();
+            renderHUD(EXOPLANET_DATA);
+
+            // Mostrar el panel de estadísticas por defecto
+            const statsPanel = document.getElementById('stats-panel');
+            if (statsPanel) {
+                statsPanel.classList.remove('hidden');
+            }
+            
             animate();
 
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
-                    if (entry.isIntersecting) entry.target.classList.add('visible');
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
                 });
             }, { threshold: 0.1 });
             document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-            // --- LÓGICA DE LA APLICACIÓN ---
             const analyzeButton = document.getElementById('analyze-button');
-            const form = document.getElementById('formulario-datos');
-            
-            // Previene el envío tradicional del formulario
-            form.addEventListener('submit', (event) => event.preventDefault());
 
-            analyzeButton.addEventListener('click', () => {
-                if (form.checkValidity()) {
-                    runAnalysis();
-                } else {
-                    form.reportValidity();
-                }
+            analyzeButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                runAnalysis();
             });
 
-            async function runAnalysis() {
-                const candidateId = document.getElementById('koi_tce_delivname').value;
-                
-                const predictionData = {
+            function runAnalysis() {
+                // --- 1. OBTENER Y ACTUALIZAR DATOS DEL FORMULARIO ---
+                const data = {
                     'koi_fpflag_nt': parseInt(document.getElementById('koi_fpflag_nt').value),
                     'koi_fpflag_ss': parseInt(document.getElementById('koi_fpflag_ss').value),
                     'koi_fpflag_co': parseInt(document.getElementById('koi_fpflag_co').value),
@@ -346,73 +741,111 @@
                     'koi_prad': parseFloat(document.getElementById('koi_prad').value),
                     'koi_steff': parseFloat(document.getElementById('koi_steff').value),
                     'koi_slogg': parseFloat(document.getElementById('koi_slogg').value),
-                    'koi_srad': parseFloat(document.getElementById('koi_srad').value)
+                    'koi_srad': parseFloat(document.getElementById('koi_srad').value),
+                    'koi_tce_delivname': document.getElementById('koi_tce_delivname').value
                 };
 
-                analyzeButton.disabled = true;
-                analyzeButton.textContent = 'ANALIZANDO SEÑAL...';
-
-                try {
-                    // *** ¡IMPORTANTE! CAMBIA '127.0.0.1' POR LA IP DE TU SERVIDOR SI ES NECESARIO ***
-                    const response = await fetch('http://127.0.0.1:5000/predict', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(predictionData)
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({ error: 'Error desconocido del servidor.' }));
-                        throw new Error(`Error del servidor: ${response.status} - ${errorData.error}`);
+                // Actualizar el objeto global y el HUD con los nuevos valores del formulario
+                for (const key in data) {
+                    if (EXOPLANET_DATA[key]) {
+                        EXOPLANET_DATA[key].value = data[key];
                     }
-
-                    const result = await response.json();
-                    updateUIWithPrediction(predictionData, result, candidateId);
-
-                } catch (error) {
-                    console.error('Error al conectar con el Oráculo:', error);
-                    alert(`Error: No se pudo conectar con el servidor de análisis.\n\nDetalle: ${error.message}\n\nAsegúrate de que el script app.py se está ejecutando.`);
-                } finally {
-                    analyzeButton.disabled = false;
-                    analyzeButton.textContent = 'Decodificar Señal';
                 }
-            }
+                renderHUD(EXOPLANET_DATA);
 
-            function updateUIWithPrediction(inputData, predictionResult, candidateId) {
-                // Lógica de "Evidencia" basada en los datos de entrada para transparencia
-                document.querySelectorAll('.pro-line, .con-line').forEach(el => el.classList.add('hidden'));
-                if (inputData.koi_fpflag_co === 1) document.getElementById('con-item-1').classList.remove('hidden');
-                if (inputData.koi_prad > 20) document.getElementById('con-item-2').classList.remove('hidden');
-                if (inputData.koi_model_snr > 25) document.getElementById('pro-item-1').classList.remove('hidden');
-                if (inputData.koi_depth < 10000) document.getElementById('pro-item-2').classList.remove('hidden');
+                // --- 2. LÓGICA DE CÁLCULO (MODELO SIMPLIFICADO) ---
+                let score = 50.0;
                 
-                // Determinar resultado y confianza basado en la respuesta de la API
-                const isConfirmed = predictionResult.prediccion === 'CONFIRMED';
+                // Esconder todas las evidencias para empezar de cero
+                document.querySelectorAll('.pro-line, .con-line').forEach(el => el.classList.add('hidden'));
+
+                // Regla 1: Flag de Conflicto
+                if (data.koi_fpflag_co === 1) {
+                    score -= 45;
+                    document.getElementById('con-item-1').classList.remove('hidden');
+                }
+
+                // Regla 2: Radio Planetario
+                if (data.koi_prad > 20) {
+                    score -= 25;
+                    document.getElementById('con-item-2').classList.remove('hidden');
+                }
+
+                // Regla 3: Relación Señal/Ruido (SNR)
+                if (data.koi_model_snr > 25) {
+                    score += 35;
+                    document.getElementById('pro-item-1').classList.remove('hidden');
+                } else if (data.koi_model_snr < 10) {
+                    score -= 15;
+                }
+
+                // Regla 4: Profundidad del tránsito
+                if (data.koi_depth < 10000) {
+                    score += 15;
+                    document.getElementById('pro-item-2').classList.remove('hidden');
+                } else {
+                    score -= 20;
+                }
+
+                // --- 3. DETERMINAR RESULTADO Y CONFIANZA ---
+                let confidence = 0;
+                let status1_text, status2_text;
+                let status1_color, status2_color;
+
+                if (score >= 50) {
+                    status1_text = "PLANETA";
+                    status2_text = "CONFIRMADO";
+                    status1_color = "text-green-400";
+                    status2_color = "text-green-500";
+                    confidence = score;
+                } else {
+                    status1_text = "FALSO";
+                    status2_text = "POSITIVO";
+                    status1_color = "text-red-400";
+                    status2_color = "text-red-500";
+                    confidence = 100 - score;
+                }
+
+                // Ajustar la confianza
+                confidence = Math.min(99.8, Math.max(75.0, confidence));
+                confidence = confidence.toFixed(1);
+
+                // --- 4. ACTUALIZAR LA INTERFAZ ---
+                const resultsContainer = document.getElementById('results-container');
                 const status1 = document.getElementById('result-status-1');
                 const status2 = document.getElementById('result-status-2');
-                
-                status1.textContent = isConfirmed ? "PLANETA" : "FALSO";
-                status2.textContent = isConfirmed ? "CONFIRMADO" : "POSITIVO";
-                status1.className = 'transition-colors duration-500 ' + (isConfirmed ? "text-green-400" : "text-red-400");
-                status2.className = 'transition-colors duration-500 ' + (isConfirmed ? "text-green-500" : "text-red-500");
+                const confidenceEl = document.getElementById('result-confidence');
 
-                const confidence = (predictionResult.confianza * 100).toFixed(1);
-                document.getElementById('result-confidence').textContent = confidence;
-                document.getElementById('candidate-id').textContent = `ANÁLISIS DE: ${candidateId}`;
+                status1.textContent = status1_text;
+                status2.textContent = status2_text;
+                document.getElementById('candidate-id').textContent = ANÁLISIS DE CANDIDATO: ${data.koi_tce_delivname};
 
-                // Mostrar contenedor de resultados y animar líneas
-                const resultsContainer = document.getElementById('results-container');
+
+                // Limpiar clases de color anteriores
+                status1.className = status2.className = '';
+                status1.classList.add(status1_color);
+                status2.classList.add(status2_color);
+
+                confidenceEl.textContent = confidence;
+
+                // Mostrar el contenedor de resultados
                 resultsContainer.classList.remove('hidden');
-                // Forzar la visibilidad para animaciones
-                setTimeout(() => resultsContainer.classList.add('visible'), 10);
-                
+                resultsContainer.classList.add('visible');
+
+                // Re-iniciar animaciones de las líneas
                 document.querySelectorAll('.line-path').forEach(line => {
                     line.classList.remove('animate-right', 'animate-left');
-                    void line.offsetWidth; 
-                    if (line.closest('.pro-line:not(.hidden)')) line.classList.add('animate-right');
-                    if (line.closest('.con-line:not(.hidden)')) line.classList.add('animate-left');
+                    // Forzar reflow del DOM
+                    void line.offsetWidth;
+                    if (line.closest('.pro-line') && !line.closest('.hidden')) {
+                        line.classList.add('animate-right');
+                    } else if (line.closest('.con-line') && !line.closest('.hidden')) {
+                        line.classList.add('animate-left');
+                    }
                 });
             }
         });
     </script>
 </body>
+
 </html>
