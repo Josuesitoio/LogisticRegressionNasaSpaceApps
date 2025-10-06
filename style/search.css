@@ -1,0 +1,110 @@
+/* --- ESTILOS BASE Y FONDO --- */
+body {
+    margin: 0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    font-family: Arial, sans-serif;
+    color: white;
+
+    /* Fondo de la Galaxia (Se mantiene tu estilo original) */
+    background: 
+        radial-gradient(circle at 15% 50%, rgba(76, 0, 150, 0.4) 1%, transparent 30%), 
+        /* ... (resto de tus gradientes de nebulosa) ... */
+        #000000;
+        
+    /* CLAVE: Centra el #planet-search-container en la pantalla */
+    display: flex;
+    justify-content: center; /* Centrado horizontal */
+    align-items: center; /* Centrado vertical */
+    min-height: 100vh; 
+}
+
+#galaxy-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1; /* Fondo con z-index bajo */
+}
+
+/* --- CONTENEDOR PRINCIPAL (Visor de Búsqueda) --- */
+#planet-search-container {
+    z-index: 20; /* Se mantiene alto para estar encima del fondo */
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 40px rgba(0, 200, 255, 0.5);
+    text-align: center;
+    max-width: 800px;
+    width: 90%; 
+    height: auto; 
+}
+
+/* --- ESTILOS DE LA BARRA DE BÚSQUEDA --- */
+#planet-search-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#planet-input {
+    width: 100%; 
+    box-sizing: border-box; 
+    border-radius: 5px;
+    padding: 10px; 
+    border: 2px solid #00aaff;
+    background-color: #1a1a2e;
+    color: white;
+    font-size: 1.1em;
+}
+
+#planet-search-form button {
+    padding: 10px 20px; 
+    border: none;
+    border-radius: 20px;
+    background-color: #00aaff;
+    color: #1a1a2e;
+    font-size: 1em;
+    font-weight: bolder;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    align-self: center; 
+}
+
+#planet-search-form button:hover {
+    background-color: #00ccff;
+}
+
+/* --- CONTENEDOR DE VISUALIZACIÓN --- */
+#planet-display-area {
+    margin-top: 20px;
+    display: none; /* Se activa a 'flex' solo cuando hay búsqueda */
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    padding-top: 10px;
+}
+
+/* --- CONTENEDOR DEL PLANETA 3D (VISOR) --- */
+#threejs-planet-container {
+    width: 100%; 
+    height: 400px; 
+    position: relative; 
+    border: 1px solid #00aaff;
+    background-color: rgba(0, 0, 0, 0.4); /* El visor tiene un fondo semitransparente */
+    border-radius: 10px;
+    overflow: hidden; 
+}
+
+/* Estilo CLAVE: El canvas de Three.js debe ocupar el 100% de su contenedor */
+#threejs-planet-container canvas {
+    display: block;
+    width: 100% !important; 
+    height: 100% !important;
+}
+
+#planet-description {
+    text-align: center;
+    max-width: 600px;
+    line-height: 1.6;
+}

@@ -1,0 +1,134 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    font-family: 'Noto Sans', sans-serif;
+    color: white;
+
+    background-color: #000000;
+    
+    /* Centrado del contenedor principal */
+    display: flex;
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh; 
+    position: relative; 
+}
+
+#galaxy-container, #nebula-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0; 
+}
+
+#galaxy-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 10% 50%, rgba(76, 0, 150, 0.4) 1%, transparent 30%), 
+        radial-gradient(circle at 90% 80%, rgba(0, 50, 150, 0.3) 1%, transparent 40%);
+    opacity: 0.8;
+}
+
+#nebula-background::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 80% 20%, rgba(255, 60, 0, 0.2) 1%, transparent 35%),
+        radial-gradient(circle at 30% 90%, rgba(255, 200, 0, 0.15) 1%, transparent 45%);
+    opacity: 0.6;
+}
+
+#galaxy-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+#ui-container {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20; 
+
+    display: flex;
+    padding: 10px 15px; 
+    border-radius: 30px; 
+    background-color: rgba(0, 0, 0, 0.7); 
+    box-shadow: 0 0 15px rgba(0, 200, 255, 0.4); 
+}
+
+#planet-search {
+    width: 300px; 
+    padding: 12px 20px; 
+    box-sizing: border-box; 
+    
+    border: 2px solid #00aaff; 
+    border-radius: 25px; 
+    
+    background-color: #1a1a2e; 
+    color: white;
+    font-size: 1.1em;
+    
+    transition: box-shadow 0.3s ease;
+}
+
+#planet-search:focus {
+    outline: none;
+    box-shadow: 0 0 15px #00aaff; 
+}
+
+#planet-search-container {
+    z-index: 20; 
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 40px rgba(0, 200, 255, 0.5);
+    text-align: center;
+    max-width: 800px;
+    width: 90%; 
+    height: auto; 
+}
+
+#planet-display-area {
+    margin-top: 25px; 
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    padding-top: 10px;
+}
+
+#threejs-planet-container {
+    width: 100%; 
+    height: 400px; 
+    position: relative; 
+    border: 1px solid #00aaff;
+    
+    background-color: #000000; 
+    
+    border-radius: 10px;
+    overflow: hidden; 
+    z-index: 30; 
+}
+
+#threejs-planet-container canvas {
+    display: block;
+    width: 100% !important; 
+    height: 100% !important;
+    z-index: 31; 
+}
