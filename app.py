@@ -1,18 +1,37 @@
 import joblib
 import pandas as pd
-from flask import Flask, request, jsonify
+# Asegúrate de importar render_template
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
-app = Flask(__name__)
+# --- CAMBIO IMPORTANTE AQUÍ ---
+# Le decimos a Flask que busque los templates en el directorio actual (raíz)
+app = Flask(__name__, template_folder='.')
+
 CORS(app)
 
+# --- Carga de Modelos (sin cambios) ---
 try:
     modelo = joblib.load('modelo_kepler_equilibrado.pkl')
     escalador = joblib.load('escalador_kepler_equilibrado.pkl')
     print("Modelo y escalador cargados correctamente.")
 except FileNotFoundError:
-    print("Error: Asegúrate de que los archivos 'modelo_kepler_equilibrado.pkl' y 'escalador_kepler_equilibrado.pkl' se encuentren en el mismo directorio.")
+    print("Error: No se encontraron los archivos .pkl.")
     exit()
+
+# --- RUTAS PARA SERVIR LAS PÁGINAS HTML (Ahora desde la raíz) ---
+
+# Ruta para la página principal (index.html)
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+# Nueva ruta para la página del formulario (formulario.html)
+@app.route('/formulario')
+def formulario():
+    return render_template('formulario.html')
+
+# --- ENDPOINT DE LA API PARA LA PREDICCIÓN (sin cambios) ---
 
 COLUMNAS_ESPERADAS = [
     'koi_fpflag_nt', 'koi_fpflag_ss', 'koi_fpflag_co', 'koi_fpflag_ec',
@@ -29,20 +48,12 @@ def predecir():
             return jsonify({"error": "No se recibieron datos."}), 400
 
         if not all(columna in datos_entrada for columna in COLUMNAS_ESPERADAS):
-            columnas_faltantes = list(set(COLUMNAS_ESPERADAS) - set(datos_entrada.keys()))
-            return jsonify({
-                "error": "Faltan datos de entrada.",
-                "columnas_faltantes": columnas_faltantes,
-                "columnas_esperadas": COLUMNAS_ESPERADAS
-            }), 400
+            return jsonify({"error": "Faltan datos de entrada."}), 400
 
         nuevos_datos = pd.DataFrame([datos_entrada], columns=COLUMNAS_ESPERADAS)
-        
         nuevos_datos_escalados = escalador.transform(nuevos_datos)
-
         prediccion_num = modelo.predict(nuevos_datos_escalados)
         probabilidades = modelo.predict_proba(nuevos_datos_escalados)
-
         resultado_texto = 'CONFIRMED' if prediccion_num[0] == 1 else 'FALSE POSITIVE'
         confianza = float(probabilidades[0][prediccion_num[0]])
 
@@ -50,7 +61,6 @@ def predecir():
             'prediccion': resultado_texto,
             'confianza': round(confianza, 4)
         }
-
         return jsonify(respuesta)
 
     except Exception as e:
